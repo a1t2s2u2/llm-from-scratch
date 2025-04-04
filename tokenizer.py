@@ -21,49 +21,40 @@ with open("the-verdict.txt", "r", encoding="utf-8") as f:
 
 print("Total number of character:", len(raw_text))
 print("Preview:", raw_text[:99])
-# %% Tokenize text
-import re
-text = "Hello, world. Is this-- a test?"
-# 句読点
-preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', raw_text)
-preprocessed = [item.strip() for item in preprocessed if item.strip()]
-print("Tokenized text:", preprocessed[:30])
-print("len:", len(preprocessed))
-# %% Convert token IDs
-all_words = sorted(set(preprocessed))
-vocab_size = len(all_words)
-
-print("vocab_size:", vocab_size)
-
-vocab = {token:integer for integer, token in enumerate(all_words)}
-
-for i, item in enumerate(vocab.items()):
-    print(item)
-    if i >= 50:
-        break
-# %% Simple Tokenizer V1
-class SimpleTokenizerV1:
+# %%
+"""
+# トークナイザーの実装
+## encoder
+テキストをIDに変換する
+1. テキストの分割：記号も含める
+2. トークン化：未知の単語は`<|unk|>`に
+3. IDを付与：
+## decoder
+辞書を用いて、文字列に戻す
+"""
+class SimpleTokenizer:
     def __init__(self, vocab):
         self.str_to_int = vocab
-        self.int_to_str = {i:s for s,i in vocab.items()}
+        self.int_to_str = { i:s for s,i in vocab.items()}
     
     def encode(self, text):
         preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', text)
-                                
+        preprocessed = [item.strip() for item in preprocessed if item.strip()]
         preprocessed = [
-            item.strip() for item in preprocessed if item.strip()
+            item if item in self.str_to_int 
+            else "<|unk|>" for item in preprocessed
         ]
+
         ids = [self.str_to_int[s] for s in preprocessed]
         return ids
         
     def decode(self, ids):
         text = " ".join([self.int_to_str[i] for i in ids])
         # Replace spaces before the specified punctuations
-        text = re.sub(r'\s+([,.?!"()\'])', r'\1', text)
+        text = re.sub(r'\s+([,.:;?!"()\'])', r'\1', text)
         return text
 
-
-tokenizer = SimpleTokenizerV1(vocab)
+tokenizer = SimpleTokenizer(vocab)
 
 text = """"It's the last he painted, you know," 
            Mrs. Gisburn said with pardonable pride."""
@@ -71,4 +62,21 @@ ids = tokenizer.encode(text)
 decoded_res = tokenizer.decode(ids)
 print("idsencode(text):", ids)
 print("decode(ids):", decoded_res)
+# %%
+"""
+# tiktokenを用いたトークナイザー
+バイトペアエンコーディング（BPE）に基づいたトークナイザーで、GPTシリーズにも用いられる
+"""
+import tiktoken
+
+tokenizeere = tiktoken.get_encoding("gpt2")
+
+text = (
+    "Hello, do you like tea? <|endoftext|> In the sunlit terraces"
+     "of someunknownPlace."
+)
+
+integers = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
+
+print(integers)
 # %%
