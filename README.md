@@ -8,3 +8,7 @@ $ source venv/bin/activate
 ```
 $ pip install -r requirements.txt
 ```
+
+## 参考文献
+Build A Largee Language Model
+[GitHub](https://github.com/rasbt/LLMs-from-scratch)
